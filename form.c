@@ -1,6 +1,7 @@
 #include <ncurses.h>
 #include <form.h>
 #include <string.h>
+#include <unistd.h>
 
 void position_input_title(WINDOW *win, int starty, int startx, int width, char *string, chtype color);
 
@@ -15,11 +16,12 @@ WINDOW *create_newwin(int height, int width, int starty, int startx) {
 }
 
 
-int renderWindow(char* display_buffer) {
+int renderWindow(int client_fd) {
   FIELD *field[2];
   FORM *my_form;
   WINDOW *my_form_win;
   WINDOW *my_display_win;
+  char client_msg[1024];
   int ch, rows, cols;
 
   /* Initialize curses */
@@ -72,10 +74,14 @@ int renderWindow(char* display_buffer) {
 
   form_driver(my_form, REQ_BEG_LINE);
   /* Loop through to get user requests */
+  int cur_pos = 0;
   while ((ch = wgetch(my_form_win)) != KEY_F(1)) {
     switch (ch) {
     case KEY_BACKSPACE:
       form_driver(my_form, REQ_DEL_PREV);
+      if(cur_pos > 0) {
+        cur_pos -= 1;
+      }
       break;
     case KEY_DOWN:
       /* Go to next field */
@@ -89,13 +95,24 @@ int renderWindow(char* display_buffer) {
       form_driver(my_form, REQ_PREV_FIELD);
       form_driver(my_form, REQ_END_LINE);
       break;
-    case '\n':
+
+      // when the client presses enter
+      case '\n': 
         form_driver(my_form, REQ_CLR_FIELD);
+        client_msg[cur_pos] = '\n';
+        client_msg[cur_pos+1] = '\0';
+
+        // send message to the server
+        write(client_fd, client_msg, sizeof(client_msg));
+        
+        cur_pos = 0;
         break;
     default:
       /* If this is a normal character, it gets */
       /* Printed				  */
       form_driver(my_form, ch);
+      client_msg[cur_pos]  = (char)ch;
+      cur_pos++;
       break;
     }
   }
