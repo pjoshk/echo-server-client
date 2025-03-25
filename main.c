@@ -1,12 +1,35 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <pthread.h>
 #include "form.c"
 
+#define MAX_BUFFER_SIZE 1024
+
+typedef struct serverOpts {
+  int client_fd;
+  char* server_msg;
+} serverOpts;
+
+void* read_server_msg(void* server_otps){
+  serverOpts* opts = (struct serverOpts*) server_otps;
+  int client_fd = opts->client_fd;
+  char* server_msg = opts->server_msg;
+
+  while(1){
+    int bytes_received = recv(client_fd, server_msg, MAX_BUFFER_SIZE, 0);
+    if(client_fd < 0){
+        break;
+    }
+  }
+
+  return NULL;
+}
 
 int main() {
-  char client_msg[1024];
-  // char server_msg[1024];
+  char client_msg[MAX_BUFFER_SIZE];
+  char server_msg[MAX_BUFFER_SIZE];
+  pthread_t thread_id;
 
   // create server address
   struct sockaddr_in server_addr = {
@@ -30,7 +53,14 @@ int main() {
     exit(EXIT_FAILURE);
   }
 
-  renderWindow(client_fd);
+  serverOpts server_opts = {
+    .client_fd = client_fd,
+    .server_msg = server_msg
+  };
+
+  pthread_create(&thread_id, NULL, read_server_msg, &server_opts);
+
+  renderWindow(client_fd, server_msg);
 
   return 0;
 }
