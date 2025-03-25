@@ -47,11 +47,11 @@ int main() {
   }
 
   // connect to the server
-  int connection = connect(client_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-  if (connection < 0){
-    perror("[DEBUG][ERROR] socket failed\n");
-    exit(EXIT_FAILURE);
-  }
+  // int connection = connect(client_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+  // if (connection < 0){
+  //   perror("[DEBUG][ERROR] socket failed\n");
+  //   exit(EXIT_FAILURE);
+  // }
 
   serverOpts server_opts = {
     .client_fd = client_fd,

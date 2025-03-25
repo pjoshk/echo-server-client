@@ -2,6 +2,7 @@
 #include <form.h>
 #include <string.h>
 #include <unistd.h>
+#include <strings.h>
 
 void position_input_title(WINDOW *win, int starty, int startx, int width, char *string, chtype color);
 
@@ -16,7 +17,7 @@ WINDOW *create_newwin(int height, int width, int starty, int startx) {
 }
 
 
-int renderWindow(int client_fd) {
+int renderWindow(int client_fd, char* server_msg) {
   FIELD *field[2];
   FORM *my_form;
   WINDOW *my_form_win;
@@ -75,6 +76,7 @@ int renderWindow(int client_fd) {
   form_driver(my_form, REQ_BEG_LINE);
   /* Loop through to get user requests */
   int cur_pos = 0;
+  int lines = 1;
   while ((ch = wgetch(my_form_win)) != KEY_F(1)) {
     switch (ch) {
     case KEY_BACKSPACE:
@@ -99,13 +101,27 @@ int renderWindow(int client_fd) {
       // when the client presses enter
       case '\n': 
         form_driver(my_form, REQ_CLR_FIELD);
-        client_msg[cur_pos] = '\n';
-        client_msg[cur_pos+1] = '\0';
+        // client_msg[cur_pos] = '\n';
+        // client_msg[cur_pos+1] = '\0';
+        client_msg[cur_pos] = '\0';
 
         // send message to the server
-        write(client_fd, client_msg, sizeof(client_msg));
+        // write(client_fd, client_msg, sizeof(client_msg));
         
         cur_pos = 0;
+
+        // if(strlen(client_msg) > COLS-8){
+        //   for(int a=0; a<(strlen(client_msg)/COLS-8); a++){
+        //     mvwprintw(my_display_win, lines, 1, client_msg);
+        //     wmove(my_display_win, ++lines, 1);
+        //   }
+
+        // }
+
+        mvwprintw(my_display_win, lines, 1, client_msg);
+        wmove(my_display_win, ++lines, 1);
+        bzero(server_msg, 1024);
+        wrefresh(my_display_win);
         break;
     default:
       /* If this is a normal character, it gets */
