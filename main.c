@@ -1,13 +1,25 @@
+#include <ncurses.h>
 #include <form.h>
 #include <string.h>
 
-void print_in_middle(WINDOW *win, int starty, int startx, int width,
-                     char *string, chtype color);
+void position_input_title(WINDOW *win, int starty, int startx, int width, char *string, chtype color);
+
+WINDOW *create_newwin(int height, int width, int starty, int startx) {
+  WINDOW *local_win;
+
+  local_win = newwin(height, width, starty, startx);
+  box(local_win, 0, 0); /* 0, 0 gives default characters for the vertical and horizontal lines */
+  wrefresh(local_win);  /* Show that box 		*/
+
+  return local_win;
+}
+
 
 int main() {
   FIELD *field[2];
   FORM *my_form;
   WINDOW *my_form_win;
+  WINDOW *my_display_win;
   int ch, rows, cols;
 
   /* Initialize curses */
@@ -21,7 +33,7 @@ int main() {
   init_pair(1, COLOR_YELLOW, COLOR_BLACK);
 
   /* Initialize the fields */
-  field[0] = new_field(1, COLS - 10, 1, 0, 0, 0);
+  field[0] = new_field(1, COLS - 10, 0, 0, 0, 0);
   field[1] = NULL;
 
   /* Set field options */
@@ -36,8 +48,9 @@ int main() {
   scale_form(my_form, &rows, &cols);
 
   /* Create the window to be associated with the form */
-  my_form_win = newwin(rows + 4, cols + 4, 4, 4);
+  my_form_win = newwin(rows + 3, cols + 4, LINES-6, 4);
   keypad(my_form_win, TRUE);
+
 
   /* Set main window and sub window */
   set_form_win(my_form, my_form_win);
@@ -45,12 +58,16 @@ int main() {
 
   /* Print a border around the main window and print a title */
   box(my_form_win, 0, 0);
-  print_in_middle(my_form_win, 1, 0, cols + 4, "My Form", COLOR_PAIR(1));
+  position_input_title(my_form_win, 1, 0, cols + 4, "My Form", COLOR_PAIR(1));
 
   post_form(my_form);
   wrefresh(my_form_win);
 
   mvprintw(LINES - 2, 0, "Use UP, DOWN arrow keys to switch between fields");
+  refresh();
+
+  /* Create the window to be associated with the display */
+  my_display_win = create_newwin(LINES-6, COLS-6, 0, 4);
   refresh();
 
   form_driver(my_form, REQ_BEG_LINE);
@@ -93,7 +110,7 @@ int main() {
   return 0;
 }
 
-void print_in_middle(WINDOW *win, int starty, int startx, int width,
+void position_input_title(WINDOW *win, int starty, int startx, int width,
                      char *string, chtype color) {
   int length, x, y;
   float temp;
